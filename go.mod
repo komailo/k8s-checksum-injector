@@ -1,4 +1,4 @@
-module github.com/your-username/k8s-checksum-injector
+module github.com/komailo/k8s-checksum-injector
 
 go 1.25.1
 
