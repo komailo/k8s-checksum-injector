@@ -1,0 +1,53 @@
+# this is ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  LOG_LEVEL: info
+  FEATURE_FLAG: "true"
+
+# This is the secret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  TOKEN: QVBJX1RPS0VO
+
+# This is the Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: myimage
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+    metadata:
+      labels:
+        checksum/configmap-app-config: 1d71d64107b8
+        checksum/secret-app-secret: b21473163543
+
+# This is a Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    app: app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
