@@ -1,4 +1,4 @@
-package main
+package injector
 
 import (
 	"reflect"
@@ -217,6 +217,56 @@ func TestSanitizeKey(t *testing.T) {
 	}
 	if got := sanitizeKey("no-dots"); got != "no-dots" {
 		t.Fatalf("sanitizeKey should leave hyphens intact, got %q", got)
+	}
+}
+
+func TestInjectChecksums(t *testing.T) {
+	input := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app.config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: top.secret
+stringData:
+  password: s3cr3t
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+spec:
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+        - name: app
+          image: demo:latest
+          envFrom:
+            - configMapRef:
+                name: app.config
+          env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: top.secret
+                  key: password
+`
+
+	got, err := InjectChecksums(input, ModeAnnotation)
+	if err != nil {
+		t.Fatalf("InjectChecksums: %v", err)
+	}
+
+	if !strings.Contains(got, "checksum/configmap-app-config") {
+		t.Fatalf("expected configmap checksum in output, got:\n%s", got)
+	}
+	if !strings.Contains(got, "checksum/secret-top-secret") {
+		t.Fatalf("expected secret checksum in output, got:\n%s", got)
 	}
 }
 
